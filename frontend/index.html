@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Manager Jira Dashboard</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         TOP HEADER
+    ========================== -->
+    <header class="top-header">
+
+        <div>
+            <h1>Manager Jira Dashboard</h1>
+            <p>Jira ticket overview and resource workload</p>
+        </div>
+
+        <div class="header-actions">
+
+            <div class="search-box">
+                🔍
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Search Jira key or summary"
+                >
+            </div>
+
+            <button id="refresh-button" class="refresh-button">
+                🔄 Refresh
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         GLOBAL FILTER BAR
+    ========================== -->
+    <section class="global-filter-bar">
+
+        <div class="filter-title">
+            <strong>Filters</strong>
+            <span>Apply filters to the entire dashboard</span>
+        </div>
+
+        <div class="filter-control">
+
+            <label>Status</label>
+
+            <select id="global-status">
+                <option value="ALL">All Status</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter-control">
+
+            <label>Priority</label>
+
+            <select id="global-priority">
+                <option value="ALL">All Priorities</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter-control">
+
+            <label>Type</label>
+
+            <select id="global-type">
+                <option value="ALL">All Types</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter-control">
+
+            <label>Assignee</label>
+
+            <select id="global-assignee">
+                <option value="ALL">All Assignees</option>
+            </select>
+
+        </div>
+
+
+        <button id="clear-global-filters" class="clear-button">
+            Clear
+        </button>
+
+    </section>
+
+
+    <!-- =========================
+         KPI CARDS
+    ========================== -->
+    <section class="kpi-grid">
+
+        <div class="kpi-card" data-kpi-filter="ALL">
+
+            <div class="kpi-label">
+                TOTAL TICKETS
+            </div>
+
+            <div class="kpi-value" id="total-tickets">
+                0
+            </div>
+
+            <div class="kpi-description">
+                Click to view all tickets
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card" data-kpi-filter="Open">
+
+            <div class="kpi-label">
+                OPEN
+            </div>
+
+            <div class="kpi-value" id="open-tickets">
+                0
+            </div>
+
+            <div class="kpi-description">
+                Click to filter tickets
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card" data-kpi-filter="Incoming">
+
+            <div class="kpi-label">
+                INCOMING
+            </div>
+
+            <div class="kpi-value" id="incoming-tickets">
+                0
+            </div>
+
+            <div class="kpi-description">
+                Click to filter tickets
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card" data-kpi-filter="Accepted">
+
+            <div class="kpi-label">
+                ACCEPTED
+            </div>
+
+            <div class="kpi-value" id="accepted-tickets">
+                0
+            </div>
+
+            <div class="kpi-description">
+                Click to filter tickets
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         CHART GRID
+    ========================== -->
+    <section class="chart-grid">
+
+
+        <!-- STATUS -->
+        <div class="dashboard-card">
+
+            <div class="card-header">
+
+                <div>
+                    <h2>Status</h2>
+                    <p>Ticket distribution by status</p>
+                </div>
+
+                <select id="status-local-filter">
+                    <option value="ALL">All</option>
+                </select>
+
+            </div>
+
+            <div
+                id="status-chart"
+                class="donut-chart-container">
+            </div>
+
+        </div>
+
+
+        <!-- PRIORITY -->
+        <div class="dashboard-card">
+
+            <div class="card-header">
+
+                <div>
+                    <h2>Priority</h2>
+                    <p>Ticket distribution by priority</p>
+                </div>
+
+                <select id="priority-local-filter">
+                    <option value="ALL">All</option>
+                </select>
+
+            </div>
+
+            <div
+                id="priority-chart"
+                class="donut-chart-container">
+            </div>
+
+        </div>
+
+
+        <!-- TYPE -->
+        <div class="dashboard-card">
+
+            <div class="card-header">
+
+                <div>
+                    <h2>Ticket Type</h2>
+                    <p>Distribution by ticket type</p>
+                </div>
+
+                <select id="type-local-filter">
+                    <option value="ALL">All</option>
+                </select>
+
+            </div>
+
+            <div
+                id="type-chart"
+                class="donut-chart-container">
+            </div>
+
+        </div>
+
+
+        <!-- RESOURCE -->
+        <div class="dashboard-card">
+
+            <div class="card-header">
+
+                <div>
+                    <h2>Resource Workload</h2>
+                    <p>Tickets assigned to each resource</p>
+                </div>
+
+                <select id="assignee-local-filter">
+                    <option value="ALL">All</option>
+                </select>
+
+            </div>
+
+            <div
+                id="assignee-chart"
+                class="donut-chart-container">
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         RECENTLY UPDATED
+    ========================== -->
+    <section class="dashboard-card recent-section">
+
+        <div class="card-header">
+
+            <div>
+                <h2>Recently Updated</h2>
+                <p>Latest ticket activity</p>
+            </div>
+
+            <select id="recent-local-filter">
+                <option value="ALL">All Status</option>
+            </select>
+
+        </div>
+
+        <div id="recent-tickets" class="recent-tickets">
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ALL TICKETS
+    ========================== -->
+    <section class="dashboard-card tickets-section">
+
+        <div class="card-header">
+
+            <div>
+                <h2>All Tickets</h2>
+                <p>
+                    Ticket details based on the selected filters
+                </p>
+            </div>
+
+            <div class="ticket-count">
+                <span id="filtered-count">0</span>
+                tickets
+            </div>
+
+        </div>
+
+
+        <div class="table-filters">
+
+            <select id="table-status-filter">
+                <option value="ALL">All Status</option>
+            </select>
+
+            <select id="table-priority-filter">
+                <option value="ALL">All Priorities</option>
+            </select>
+
+            <select id="table-type-filter">
+                <option value="ALL">All Types</option>
+            </select>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Jira Key</th>
+                        <th>Summary</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Type</th>
+                        <th>Assignee</th>
+                        <th>Updated</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="ticket-table-body">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- =========================
+     TICKET DETAILS DRAWER
+========================== -->
+
+<div id="ticket-drawer" class="ticket-drawer">
+
+    <div class="drawer-header">
+
+        <h2>Ticket Details</h2>
+
+        <button id="close-drawer">
+            ✕
+        </button>
+
+    </div>
+
+    <div id="ticket-details" class="ticket-details">
+    </div>
+
+</div>
+
+
+<script src="/static/script.js?v=5"></script>
+
+</body>
+</html>
