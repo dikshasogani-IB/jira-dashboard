@@ -1,27 +1,36 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 import psycopg
+from io import BytesIO
+from openpyxl import Workbook
 from dotenv import load_dotenv
+import os 
 
 app = FastAPI()
-
+load_dotenv()
 
 # Serve frontend files
 # Serve frontend files
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 
-# Database connection
+# Database connection: keep credentials in the local .env file.
 def get_connection():
-    return psycopg.connect(
-        host="localhost",
-        port=5432,
-        dbname="manager_dashboard",
-        user="postgres",
-        password="12345"
-    )
+    password = os.getenv("DB_PASSWORD")
+    if not password:
+        raise RuntimeError(
+            "DB_PASSWORD is not set. Add it to your local .env file. "
+            "Do not commit .env to Git."
+        )
 
+    return psycopg.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "5432")),
+        dbname=os.getenv("DB_NAME", "manager_dashboard"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=password,
+    )
 
 # Home page - open the dashboard
 @app.get("/")
@@ -214,3 +223,83 @@ def get_ticket_assignee():
         })
 
     return result
+
+# Download all tickets as an Excel file
+@app.get("/tickets/export")
+def export_tickets_excel():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            jira_key,
+            summary,
+            status,
+            priority,
+            type,
+            creator,
+            reporter,
+            assignee,
+            group_name,
+            created_at,
+            updated_at,
+            jira_url
+        FROM tickets
+        ORDER BY updated_at DESC;
+    """)
+
+    rows = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Tickets"
+
+    headers = [
+        "Jira ID",
+        "Summary",
+        "Status",
+        "Priority",
+        "Type",
+        "Creator",
+        "Reporter",
+        "Assignee",
+        "Group",
+        "Created",
+        "Updated",
+        "Jira URL"
+    ]
+
+    worksheet.append(headers)
+
+    for row in rows:
+        worksheet.append(list(row))
+
+    # Make the Excel sheet easier to read.
+    worksheet.freeze_panes = "A2"
+    worksheet.auto_filter.ref = worksheet.dimensions
+
+    for column in worksheet.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+
+        for cell in column:
+            value = "" if cell.value is None else str(cell.value)
+            max_length = max(max_length, len(value))
+
+        worksheet.column_dimensions[column_letter].width = min(max(max_length + 2, 12), 50)
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": "attachment; filename=manager_dashboard_tickets.xlsx"
+        }
+    )
