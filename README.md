@@ -17,7 +17,7 @@ Open the project folder in VS Code, then open Terminal → New Terminal.
 2. Create and activate a virtual environment
 On Windows PowerShell, run:
 python -m venv venv
-.env\Scripts\Activate.ps1
+.Venv\Scripts\Activate.ps1
 If PowerShell blocks activation, follow your organization's approved execution-policy guidance or activate the environment using the VS Code Python environment selector.
 3. Install dependencies
 Make sure requirements.txt is present in the project root, then run:
